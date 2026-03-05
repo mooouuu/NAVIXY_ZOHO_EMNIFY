@@ -181,23 +181,29 @@ function TrackerCard({ tracker, sim, company }: { tracker: NormalizedTracker; si
           </div>
           <div>
             <p className="text-white/50">Latitud</p>
-            <p className="font-mono text-white">
-              {tracker.lat ?? "—"}
-              {hasCoords && (
-                <a
-                  href={mapsUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="ml-2 rounded bg-white/10 px-2 py-0.5 text-xs text-emerald-200 underline-offset-2 hover:underline"
-                >
-                  Maps
-                </a>
-              )}
-            </p>
+            <p className="font-mono text-white">{tracker.lat ?? "—"}</p>
           </div>
           <div>
             <p className="text-white/50">Longitud</p>
             <p className="font-mono text-white">{tracker.lon ?? "—"}</p>
+          </div>
+          <div className="sm:col-span-2">
+            <p className="text-white/50">Ubicación</p>
+            {hasCoords ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono text-white/80">{tracker.lat}, {tracker.lon}</span>
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-full border border-emerald-400/60 bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-50 shadow-sm shadow-emerald-900/30 transition hover:brightness-110"
+                >
+                  Abrir en Google Maps
+                </a>
+              </div>
+            ) : (
+              <p className="font-mono text-white">—</p>
+            )}
           </div>
           <div>
             <p className="text-white/50">Velocidad</p>
