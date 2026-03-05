@@ -5,6 +5,7 @@ import useSWR from "swr";
 
 import type { NormalizedTracker } from "@/lib/navixy-client";
 import type { ZohoData } from "@/lib/zoho";
+import type { SmsMessage } from "@/lib/emnify";
 
 type ApiResponse = {
   trackers: NormalizedTracker[];
@@ -90,6 +91,11 @@ function TrackerCard({ tracker, sim, company }: { tracker: NormalizedTracker; si
 
   const [resetting, setResetting] = useState(false);
   const [resetMsg, setResetMsg] = useState<string | null>(null);
+  const [smsBody, setSmsBody] = useState("");
+  const [smsSending, setSmsSending] = useState(false);
+  const [smsMsg, setSmsMsg] = useState<string | null>(null);
+  const [smsList, setSmsList] = useState<SmsMessage[] | null>(null);
+  const [smsLoading, setSmsLoading] = useState(false);
 
   const handleReset = async () => {
     if (!endpointId) return;
@@ -108,6 +114,43 @@ function TrackerCard({ tracker, sim, company }: { tracker: NormalizedTracker; si
       setResetMsg(err instanceof Error ? err.message : "Error al resetear");
     } finally {
       setResetting(false);
+    }
+  };
+
+  const handleSendSms = async () => {
+    if (!endpointId || !smsBody.trim()) return;
+    setSmsMsg(null);
+    setSmsSending(true);
+    try {
+      const res = await fetch("/api/sim-sms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpointId, message: smsBody }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "No se pudo enviar SMS");
+      setSmsMsg("SMS enviado");
+      setSmsBody("");
+    } catch (err) {
+      setSmsMsg(err instanceof Error ? err.message : "Error al enviar SMS");
+    } finally {
+      setSmsSending(false);
+    }
+  };
+
+  const handleLoadSms = async () => {
+    if (!endpointId) return;
+    setSmsLoading(true);
+    setSmsMsg(null);
+    try {
+      const res = await fetch(`/api/sim-sms?endpointId=${endpointId}&limit=5`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "No se pudo cargar SMS");
+      setSmsList(json.messages || []);
+    } catch (err) {
+      setSmsMsg(err instanceof Error ? err.message : "Error al cargar SMS");
+    } finally {
+      setSmsLoading(false);
     }
   };
 
@@ -201,6 +244,54 @@ function TrackerCard({ tracker, sim, company }: { tracker: NormalizedTracker; si
             )}
             {!endpointId && (
               <span className="text-xs text-white/50">Sin endpoint Emnify</span>
+            )}
+          </div>
+        </div>
+        <div className="sm:col-span-2">
+          <p className="text-white/50">SMS (Emnify)</p>
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                disabled={!endpointId || smsSending}
+                value={smsBody}
+                onChange={(e) => setSmsBody(e.target.value)}
+                placeholder="Mensaje a enviar"
+                className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-emerald-400 focus:outline-none"
+              />
+              <button
+                disabled={!endpointId || smsSending || !smsBody.trim()}
+                onClick={handleSendSms}
+                className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-black transition hover:brightness-110 disabled:opacity-50"
+              >
+                {smsSending ? "Enviando…" : "Enviar SMS"}
+              </button>
+              <button
+                disabled={!endpointId || smsLoading}
+                onClick={handleLoadSms}
+                className="rounded-lg border border-white/20 px-3 py-2 text-sm text-white transition hover:bg-white/10 disabled:opacity-50"
+              >
+                {smsLoading ? "Cargando…" : "Ver últimos SMS"}
+              </button>
+            </div>
+            {smsMsg && <span className="text-xs text-white/70">{smsMsg}</span>}
+            {!endpointId && <span className="text-xs text-white/50">Sin endpoint Emnify</span>}
+            {smsList && smsList.length > 0 && (
+              <div className="rounded-lg border border-white/10 bg-black/30 p-2 text-xs text-white/80">
+                {smsList.map((m) => (
+                  <div key={m.id} className="border-b border-white/5 py-1 last:border-0">
+                    <div className="flex justify-between">
+                      <span className="font-semibold">
+                        {m.direction === "mt" ? "➜" : "⬅"} {m.direction?.toUpperCase() || "?"}
+                      </span>
+                      <span className="text-white/60">{formatDate(m.timestamp)}</span>
+                    </div>
+                    <div className="text-white/70 break-words">{m.payload || "(sin texto)"}</div>
+                    <div className="text-white/50">
+                      {m.source_address || ""} → {m.dest_address || ""}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>

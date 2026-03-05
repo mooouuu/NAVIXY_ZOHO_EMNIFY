@@ -130,3 +130,48 @@ export async function resetConnectivity(endpointId: number) {
   }
   return true;
 }
+
+export async function sendSms(endpointId: number, payload: string, sourceAddress?: string) {
+  if (!endpointId) throw new Error("endpointId requerido");
+  if (!payload) throw new Error("payload requerido");
+  const token = await authenticate();
+  const res = await fetch(`${baseUrl}/endpoint/${endpointId}/sms`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      payload,
+      ...(sourceAddress ? { source_address: sourceAddress } : {}),
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Emnify SMS error ${res.status}: ${text}`);
+  }
+  return true;
+}
+
+export type SmsMessage = {
+  id: number;
+  payload?: string;
+  timestamp?: string;
+  direction?: string;
+  source_address?: string | number;
+  dest_address?: string | number;
+};
+
+export async function listSms(endpointId: number, limit = 5): Promise<SmsMessage[]> {
+  if (!endpointId) throw new Error("endpointId requerido");
+  const token = await authenticate();
+  const res = await fetch(`${baseUrl}/endpoint/${endpointId}/sms`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Emnify SMS list error ${res.status}: ${text}`);
+  }
+  const data = (await res.json()) as SmsMessage[];
+  return (data || []).slice(-limit).reverse();
+}
