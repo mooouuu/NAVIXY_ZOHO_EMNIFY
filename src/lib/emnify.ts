@@ -112,3 +112,21 @@ export async function fetchSimStatuses(imeis: string[]): Promise<Record<string, 
   const entries = await Promise.all(unique.map(async (imei) => [imei, await fetchSimStatusByImei(imei)] as const));
   return Object.fromEntries(entries);
 }
+
+export async function resetConnectivity(endpointId: number) {
+  if (!endpointId) throw new Error("endpointId requerido");
+  const token = await authenticate();
+  const res = await fetch(`${baseUrl}/connectivity_reset`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ endpoint: endpointId }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Emnify reset error ${res.status}: ${text}`);
+  }
+  return true;
+}

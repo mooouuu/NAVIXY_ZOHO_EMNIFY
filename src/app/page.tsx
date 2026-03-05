@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import useSWR from "swr";
 
 import type { NormalizedTracker } from "@/lib/navixy-client";
@@ -76,6 +77,31 @@ function TrackerCard({ tracker, sim, company }: { tracker: NormalizedTracker; si
   const simStatus = sim?.connectivity?.status || sim?.sim?.status;
   const simRat = sim?.connectivity?.rat;
   const simOperator = sim?.connectivity?.operator;
+  const simNumber = sim?.sim?.iccid || sim?.sim?.msisdn;
+  const endpointId = sim?.endpointId;
+
+  const [resetting, setResetting] = useState(false);
+  const [resetMsg, setResetMsg] = useState<string | null>(null);
+
+  const handleReset = async () => {
+    if (!endpointId) return;
+    setResetMsg(null);
+    setResetting(true);
+    try {
+      const res = await fetch("/api/sim-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpointId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "No se pudo resetear la línea");
+      setResetMsg("Reset enviado");
+    } catch (err) {
+      setResetMsg(err instanceof Error ? err.message : "Error al resetear");
+    } finally {
+      setResetting(false);
+    }
+  };
 
   return (
     <article className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-lg shadow-black/30">
@@ -135,6 +161,28 @@ function TrackerCard({ tracker, sim, company }: { tracker: NormalizedTracker; si
         <div>
           <p className="text-white/50">Operador</p>
           <p className="font-mono text-white">{simOperator || "—"}</p>
+        </div>
+        <div>
+          <p className="text-white/50">SIM (ICCID/MSISDN)</p>
+          <p className="font-mono text-white break-all">{simNumber || "—"}</p>
+        </div>
+        <div>
+          <p className="text-white/50">Reset de conexión</p>
+          <div className="flex flex-col gap-1">
+            <button
+              disabled={!endpointId || resetting}
+              onClick={handleReset}
+              className="w-full rounded-lg border border-emerald-500/50 bg-emerald-500/20 px-3 py-1 text-sm font-semibold text-emerald-50 transition hover:brightness-110 disabled:opacity-50"
+            >
+              {resetting ? "Enviando..." : "Resetear línea"}
+            </button>
+            {resetMsg && (
+              <span className="text-xs text-white/70">{resetMsg}</span>
+            )}
+            {!endpointId && (
+              <span className="text-xs text-white/50">Sin endpoint Emnify</span>
+            )}
+          </div>
         </div>
         <div>
           <p className="text-white/50">Empresa (Zoho)</p>
