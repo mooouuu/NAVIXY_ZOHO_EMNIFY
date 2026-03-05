@@ -156,7 +156,7 @@ function TrackerCard({
     setSmsLoading(true);
     setSmsMsg(null);
     try {
-      const res = await fetch(`/api/sim-sms?endpointId=${endpointId}&limit=5`);
+      const res = await fetch(`/api/sim-sms?endpointId=${endpointId}&limit=10`);
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "No se pudo cargar SMS");
       setSmsList(json.messages || []);
@@ -329,16 +329,24 @@ function TrackerCard({
                 <div className="rounded-lg border border-white/10 bg-black/30 p-2 text-xs text-white/80">
                   {smsList.map((m) => (
                     <div key={m.id} className="border-b border-white/5 py-1 last:border-0">
-                      <div className="flex justify-between">
-                        <span className="font-semibold">
-                          {m.direction === "mt" ? "➜" : "⬅"} {m.direction?.toUpperCase() || "?"}
-                        </span>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                              m.direction === "mo"
+                                ? "bg-emerald-500/20 text-emerald-100"
+                                : "bg-sky-500/20 text-sky-100"
+                            }`}
+                          >
+                            {m.direction === "mo" ? "IN" : "OUT"}
+                          </span>
+                          <span className="font-mono text-white/80">
+                            {m.source_address || ""} → {m.dest_address || ""}
+                          </span>
+                        </div>
                         <span className="text-white/60">{formatDate(m.timestamp)}</span>
                       </div>
                       <div className="text-white/70 break-words">{m.payload || "(sin texto)"}</div>
-                      <div className="text-white/50">
-                        {m.source_address || ""} → {m.dest_address || ""}
-                      </div>
                     </div>
                   ))}
                 </div>
