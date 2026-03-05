@@ -74,11 +74,13 @@ function TrackerCard({
   sim,
   company,
   contacts,
+  imei,
 }: {
   tracker: NormalizedTracker;
   sim?: SimStatus;
   company?: string;
   contacts?: { name?: string; phone?: string }[];
+  imei?: string;
 }) {
   const statusText = tracker.status?.toLowerCase() || "desconocido";
   const statusColor = statusText.includes("on") || statusText.includes("activ")
@@ -174,6 +176,14 @@ function TrackerCard({
           </p>
           <h3 className="text-lg font-semibold text-white">{tracker.name}</h3>
           <p className="text-sm text-white/60">ID: {tracker.id}</p>
+          <button
+            type="button"
+            onClick={() => imei && navigator.clipboard?.writeText(imei)}
+            className="mt-1 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/70 transition hover:bg-white/10"
+          >
+            <span className="font-mono text-white/90">IMEI: {imei || "—"}</span>
+            {imei && <span className="text-emerald-200">Copiar</span>}
+          </button>
         </div>
         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusColor}`}>
           {tracker.status || "Sin estado"}
@@ -571,6 +581,7 @@ export default function Home() {
                     sim={sim}
                     company={company}
                     contacts={contacts}
+                    imei={imei}
                   />
                 );
               })}
