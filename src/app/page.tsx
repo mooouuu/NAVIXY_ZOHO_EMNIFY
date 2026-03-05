@@ -168,138 +168,161 @@ function TrackerCard({ tracker, sim, company }: { tracker: NormalizedTracker; si
           {tracker.status || "Sin estado"}
         </span>
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-white/70 sm:grid-cols-4">
-        <div>
-          <p className="text-white/50">Última señal</p>
-          <p className="font-medium text-white">{formatDate(tracker.updatedAt)}</p>
+      {/* Navixy */}
+      <div className="mt-4 rounded-xl border border-white/10 bg-black/20 p-3">
+        <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/60">
+          <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px]">Navixy</span>
+          <span className="text-white/40">Telemetría</span>
         </div>
-        <div>
-          <p className="text-white/50">Latitud</p>
-          <p className="font-mono text-white">
-            {tracker.lat ?? "—"}
-            {hasCoords && (
-              <a
-                href={mapsUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="ml-2 rounded bg-white/10 px-2 py-0.5 text-xs text-emerald-200 underline-offset-2 hover:underline"
-              >
-                Maps
-              </a>
-            )}
-          </p>
-        </div>
-        <div>
-          <p className="text-white/50">Longitud</p>
-          <p className="font-mono text-white">{tracker.lon ?? "—"}</p>
-        </div>
-        <div>
-          <p className="text-white/50">Velocidad</p>
-          <p className="font-mono text-white">{tracker.speedKph ?? "—"} km/h</p>
-        </div>
-        <div>
-          <p className="text-white/50">Motor</p>
-          <p className="font-mono text-white">{tracker.ignition === undefined ? "—" : tracker.ignition ? "Encendido" : "Apagado"}</p>
-        </div>
-        <div>
-          <p className="text-white/50">Batería</p>
-          <p className="font-mono text-white">{tracker.battery ?? "—"}%</p>
-        </div>
-        <div className="sm:col-span-2">
-          <p className="text-white/50">Dirección</p>
-          <p className="font-medium text-white/90 line-clamp-2">
-            {tracker.address || "—"}
-          </p>
-        </div>
-        <div>
-          <p className="text-white/50">SIM</p>
-          <p className="font-mono text-white">
-            {simStatus || "—"} {simOperator ? `· ${simOperator}` : ""} {simRat ? `· ${simRat}` : ""}
-          </p>
-        </div>
-        <div>
-          <p className="text-white/50">RAT</p>
-          <p className="font-mono text-white">{simRat || "—"}</p>
-        </div>
-        <div>
-          <p className="text-white/50">Operador</p>
-          <p className="font-mono text-white">{simOperator || "—"}</p>
-        </div>
-        <div>
-          <p className="text-white/50">SIM (ICCID/MSISDN)</p>
-          <p className="font-mono text-white break-all">{simNumber || "—"}</p>
-        </div>
-        <div>
-          <p className="text-white/50">Reset de conexión</p>
-          <div className="flex flex-col gap-1">
-            <button
-              disabled={!endpointId || resetting}
-              onClick={handleReset}
-              className="w-full rounded-lg border border-emerald-500/50 bg-emerald-500/20 px-3 py-1 text-sm font-semibold text-emerald-50 transition hover:brightness-110 disabled:opacity-50"
-            >
-              {resetting ? "Enviando..." : "Resetear línea"}
-            </button>
-            {resetMsg && (
-              <span className="text-xs text-white/70">{resetMsg}</span>
-            )}
-            {!endpointId && (
-              <span className="text-xs text-white/50">Sin endpoint Emnify</span>
-            )}
+        <div className="grid grid-cols-2 gap-3 text-sm text-white/70 sm:grid-cols-4">
+          <div>
+            <p className="text-white/50">Última señal</p>
+            <p className="font-medium text-white">{formatDate(tracker.updatedAt)}</p>
           </div>
-        </div>
-        <div className="sm:col-span-2">
-          <p className="text-white/50">SMS (Emnify)</p>
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                disabled={!endpointId || smsSending}
-                value={smsBody}
-                onChange={(e) => setSmsBody(e.target.value)}
-                placeholder="Mensaje a enviar"
-                className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-emerald-400 focus:outline-none"
-              />
-              <button
-                disabled={!endpointId || smsSending || !smsBody.trim()}
-                onClick={handleSendSms}
-                className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-black transition hover:brightness-110 disabled:opacity-50"
-              >
-                {smsSending ? "Enviando…" : "Enviar SMS"}
-              </button>
-              <button
-                disabled={!endpointId || smsLoading}
-                onClick={handleLoadSms}
-                className="rounded-lg border border-white/20 px-3 py-2 text-sm text-white transition hover:bg-white/10 disabled:opacity-50"
-              >
-                {smsLoading ? "Cargando…" : "Ver últimos SMS"}
-              </button>
-            </div>
-            {smsMsg && <span className="text-xs text-white/70">{smsMsg}</span>}
-            {!endpointId && <span className="text-xs text-white/50">Sin endpoint Emnify</span>}
-            {smsList && smsList.length > 0 && (
-              <div className="rounded-lg border border-white/10 bg-black/30 p-2 text-xs text-white/80">
-                {smsList.map((m) => (
-                  <div key={m.id} className="border-b border-white/5 py-1 last:border-0">
-                    <div className="flex justify-between">
-                      <span className="font-semibold">
-                        {m.direction === "mt" ? "➜" : "⬅"} {m.direction?.toUpperCase() || "?"}
-                      </span>
-                      <span className="text-white/60">{formatDate(m.timestamp)}</span>
-                    </div>
-                    <div className="text-white/70 break-words">{m.payload || "(sin texto)"}</div>
-                    <div className="text-white/50">
-                      {m.source_address || ""} → {m.dest_address || ""}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+          <div>
+            <p className="text-white/50">Latitud</p>
+            <p className="font-mono text-white">
+              {tracker.lat ?? "—"}
+              {hasCoords && (
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="ml-2 rounded bg-white/10 px-2 py-0.5 text-xs text-emerald-200 underline-offset-2 hover:underline"
+                >
+                  Maps
+                </a>
+              )}
+            </p>
           </div>
-        </div>
-        <div>
-          <p className="text-white/50">Empresa (Zoho)</p>
-          <p className="font-mono text-white">{company || "—"}</p>
+          <div>
+            <p className="text-white/50">Longitud</p>
+            <p className="font-mono text-white">{tracker.lon ?? "—"}</p>
+          </div>
+          <div>
+            <p className="text-white/50">Velocidad</p>
+            <p className="font-mono text-white">{tracker.speedKph ?? "—"} km/h</p>
+          </div>
+          <div>
+            <p className="text-white/50">Motor</p>
+            <p className="font-mono text-white">{tracker.ignition === undefined ? "—" : tracker.ignition ? "Encendido" : "Apagado"}</p>
+          </div>
+          <div>
+            <p className="text-white/50">Batería</p>
+            <p className="font-mono text-white">{tracker.battery ?? "—"}%</p>
+          </div>
+          <div className="sm:col-span-2">
+            <p className="text-white/50">Dirección</p>
+            <p className="font-medium text-white/90 line-clamp-2">
+              {tracker.address || "—"}
+            </p>
+          </div>
         </div>
       </div>
+
+      {/* Emnify */}
+      <div className="mt-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
+        <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200">
+          <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[11px] text-emerald-50">Emnify</span>
+          <span className="text-emerald-100/70">SIM y conectividad</span>
+        </div>
+        <div className="grid grid-cols-2 gap-3 text-sm text-white/80 sm:grid-cols-3">
+          <div>
+            <p className="text-white/50">Estado SIM</p>
+            <p className="font-mono text-white">
+              {simStatus || "—"} {simOperator ? `· ${simOperator}` : ""} {simRat ? `· ${simRat}` : ""}
+            </p>
+          </div>
+          <div>
+            <p className="text-white/50">RAT</p>
+            <p className="font-mono text-white">{simRat || "—"}</p>
+          </div>
+          <div>
+            <p className="text-white/50">Operador</p>
+            <p className="font-mono text-white">{simOperator || "—"}</p>
+          </div>
+          <div className="sm:col-span-3">
+            <p className="text-white/50">SIM (ICCID/MSISDN)</p>
+            <p className="font-mono text-white break-all">{simNumber || "—"}</p>
+          </div>
+          <div>
+            <p className="text-white/50">Reset de conexión</p>
+            <div className="flex flex-col gap-1">
+              <button
+                disabled={!endpointId || resetting}
+                onClick={handleReset}
+                className="w-full rounded-lg border border-emerald-500/50 bg-emerald-500/20 px-3 py-1 text-sm font-semibold text-emerald-50 transition hover:brightness-110 disabled:opacity-50"
+              >
+                {resetting ? "Enviando..." : "Resetear línea"}
+              </button>
+              {resetMsg && (
+                <span className="text-xs text-white/70">{resetMsg}</span>
+              )}
+              {!endpointId && (
+                <span className="text-xs text-white/50">Sin endpoint Emnify</span>
+              )}
+            </div>
+          </div>
+          <div className="sm:col-span-2">
+            <p className="text-white/50">SMS (Emnify)</p>
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  disabled={!endpointId || smsSending}
+                  value={smsBody}
+                  onChange={(e) => setSmsBody(e.target.value)}
+                  placeholder="Mensaje a enviar"
+                  className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-emerald-400 focus:outline-none"
+                />
+                <button
+                  disabled={!endpointId || smsSending || !smsBody.trim()}
+                  onClick={handleSendSms}
+                  className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-black transition hover:brightness-110 disabled:opacity-50"
+                >
+                  {smsSending ? "Enviando…" : "Enviar SMS"}
+                </button>
+                <button
+                  disabled={!endpointId || smsLoading}
+                  onClick={handleLoadSms}
+                  className="rounded-lg border border-white/20 px-3 py-2 text-sm text-white transition hover:bg-white/10 disabled:opacity-50"
+                >
+                  {smsLoading ? "Cargando…" : "Ver últimos SMS"}
+                </button>
+              </div>
+              {smsMsg && <span className="text-xs text-white/70">{smsMsg}</span>}
+              {!endpointId && <span className="text-xs text-white/50">Sin endpoint Emnify</span>}
+              {smsList && smsList.length > 0 && (
+                <div className="rounded-lg border border-white/10 bg-black/30 p-2 text-xs text-white/80">
+                  {smsList.map((m) => (
+                    <div key={m.id} className="border-b border-white/5 py-1 last:border-0">
+                      <div className="flex justify-between">
+                        <span className="font-semibold">
+                          {m.direction === "mt" ? "➜" : "⬅"} {m.direction?.toUpperCase() || "?"}
+                        </span>
+                        <span className="text-white/60">{formatDate(m.timestamp)}</span>
+                      </div>
+                      <div className="text-white/70 break-words">{m.payload || "(sin texto)"}</div>
+                      <div className="text-white/50">
+                        {m.source_address || ""} → {m.dest_address || ""}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Zoho */}
+      <div className="mt-4 rounded-xl border border-indigo-400/30 bg-indigo-500/5 p-3">
+        <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-indigo-200">
+          <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[11px] text-indigo-50">Zoho</span>
+          <span className="text-indigo-100/70">Cliente</span>
+        </div>
+        <p className="font-mono text-white">{company || "—"}</p>
+      </div>
+
       <details className="mt-3 rounded-xl bg-black/30 px-4 py-3 text-white/70">
         <summary className="cursor-pointer text-sm font-semibold text-white">
           Ver datos completos
