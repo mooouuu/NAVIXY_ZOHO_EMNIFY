@@ -79,6 +79,14 @@ function TrackerCard({ tracker, sim, company }: { tracker: NormalizedTracker; si
   const simOperator = sim?.connectivity?.operator;
   const simNumber = sim?.sim?.iccid || sim?.sim?.msisdn;
   const endpointId = sim?.endpointId;
+  const hasCoords =
+    tracker.lat !== undefined &&
+    tracker.lon !== undefined &&
+    tracker.lat !== null &&
+    tracker.lon !== null;
+  const mapsUrl = hasCoords
+    ? `https://www.google.com/maps?q=${tracker.lat},${tracker.lon}`
+    : undefined;
 
   const [resetting, setResetting] = useState(false);
   const [resetMsg, setResetMsg] = useState<string | null>(null);
@@ -124,7 +132,19 @@ function TrackerCard({ tracker, sim, company }: { tracker: NormalizedTracker; si
         </div>
         <div>
           <p className="text-white/50">Latitud</p>
-          <p className="font-mono text-white">{tracker.lat ?? "—"}</p>
+          <p className="font-mono text-white">
+            {tracker.lat ?? "—"}
+            {hasCoords && (
+              <a
+                href={mapsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="ml-2 rounded bg-white/10 px-2 py-0.5 text-xs text-emerald-200 underline-offset-2 hover:underline"
+              >
+                Maps
+              </a>
+            )}
+          </p>
         </div>
         <div>
           <p className="text-white/50">Longitud</p>
