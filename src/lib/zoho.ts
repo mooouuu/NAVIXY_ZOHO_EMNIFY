@@ -93,6 +93,7 @@ export type ZohoContact = {
   firstName?: string;
   lastName?: string;
   mobile?: string;
+  phone?: string;
   companyId?: string;
 };
 
@@ -108,7 +109,7 @@ export async function fetchZohoData(): Promise<ZohoData> {
   const simsRaw = await fetchModule("ControlSIM", ["Name", "Inventario_SIM", "Tipo_de_SIM"]);
   // ControlGPS en tu cuenta es el módulo API_name \"GPS\"
   const devicesRaw = await fetchModule("GPS", ["Name", "IMEI_del_dispositivo", "Inventario_SIM", "Cliente"]);
-  const contactsRaw = await fetchModule("Contacts", ["First_Name", "Last_Name", "Mobile", "Account_Name"]);
+  const contactsRaw = await fetchModule("Contacts", ["First_Name", "Last_Name", "Mobile", "Phone", "Account_Name"]);
 
   const companies: ZohoCompany[] = companiesRaw.map((c: ZohoRow) => ({
     id: c.id as string,
@@ -137,6 +138,7 @@ export async function fetchZohoData(): Promise<ZohoData> {
     firstName: c.First_Name as string | undefined,
     lastName: c.Last_Name as string | undefined,
     mobile: c.Mobile as string | undefined,
+    phone: c.Phone as string | undefined,
     companyId: (c.Account_Name as ZohoRow | undefined)?.id as string | undefined,
   }));
 

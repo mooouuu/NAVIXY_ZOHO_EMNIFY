@@ -78,7 +78,7 @@ function TrackerCard({
   tracker: NormalizedTracker;
   sim?: SimStatus;
   company?: string;
-  contact?: { name?: string; mobile?: string };
+  contact?: { name?: string; phone?: string };
 }) {
   const statusText = tracker.status?.toLowerCase() || "desconocido";
   const statusColor = statusText.includes("on") || statusText.includes("activ")
@@ -344,7 +344,7 @@ function TrackerCard({
           <div>
             <span className="text-white/60">Contacto: </span>
             <span className="font-mono text-white">
-              {contact?.name || "—"} {contact?.mobile ? `· ${contact.mobile}` : ""}
+              {contact?.name || "—"} {contact?.phone ? `· ${contact.phone}` : ""}
             </span>
           </div>
         </div>
@@ -398,7 +398,7 @@ export default function Home() {
 
   const companyByImei: Record<string, string | undefined> = {};
   const companyIdByImei: Record<string, string | undefined> = {};
-  const contactByCompanyId: Record<string, { name?: string; mobile?: string } | undefined> = {};
+  const contactByCompanyId: Record<string, { name?: string; phone?: string } | undefined> = {};
   if (zohoData?.companies && zohoData.devices) {
     const companyMap: Record<string, string | undefined> = {};
     (zohoData.companies || []).forEach((c) => {
@@ -412,8 +412,9 @@ export default function Home() {
     });
     (zohoData.contacts || []).forEach((c) => {
       const fullName = [c.firstName, c.lastName].filter(Boolean).join(" ") || undefined;
+      const phone = c.mobile || c.phone;
       if (c.companyId) {
-        contactByCompanyId[c.companyId] = { name: fullName, mobile: c.mobile };
+        contactByCompanyId[c.companyId] = { name: fullName, phone };
       }
     });
   }
