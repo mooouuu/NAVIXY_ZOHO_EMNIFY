@@ -69,7 +69,17 @@ function formatDate(value?: string) {
   }).format(parsed);
 }
 
-function TrackerCard({ tracker, sim, company }: { tracker: NormalizedTracker; sim?: SimStatus; company?: string }) {
+function TrackerCard({
+  tracker,
+  sim,
+  company,
+  contact,
+}: {
+  tracker: NormalizedTracker;
+  sim?: SimStatus;
+  company?: string;
+  contact?: { name?: string; mobile?: string };
+}) {
   const statusText = tracker.status?.toLowerCase() || "desconocido";
   const statusColor = statusText.includes("on") || statusText.includes("activ")
     ? "bg-emerald-500/15 text-emerald-200 border border-emerald-500/40"
@@ -326,7 +336,18 @@ function TrackerCard({ tracker, sim, company }: { tracker: NormalizedTracker; si
           <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[11px] text-indigo-50">Zoho</span>
           <span className="text-indigo-100/70">Cliente</span>
         </div>
-        <p className="font-mono text-white">{company || "—"}</p>
+        <div className="flex flex-col gap-1 text-sm text-white/80">
+          <div>
+            <span className="text-white/60">Empresa: </span>
+            <span className="font-mono text-white">{company || "—"}</span>
+          </div>
+          <div>
+            <span className="text-white/60">Contacto: </span>
+            <span className="font-mono text-white">
+              {contact?.name || "—"} {contact?.mobile ? `· ${contact.mobile}` : ""}
+            </span>
+          </div>
+        </div>
       </div>
 
       <details className="mt-3 rounded-xl bg-black/30 px-4 py-3 text-white/70">
@@ -376,6 +397,8 @@ export default function Home() {
   const zohoData = zohoResp?.data;
 
   const companyByImei: Record<string, string | undefined> = {};
+  const companyIdByImei: Record<string, string | undefined> = {};
+  const contactByCompanyId: Record<string, { name?: string; mobile?: string } | undefined> = {};
   if (zohoData?.companies && zohoData.devices) {
     const companyMap: Record<string, string | undefined> = {};
     (zohoData.companies || []).forEach((c) => {
@@ -384,6 +407,13 @@ export default function Home() {
     (zohoData.devices || []).forEach((d) => {
       if (d.imei) {
         companyByImei[d.imei] = d.companyId ? companyMap[d.companyId] : undefined;
+        companyIdByImei[d.imei] = d.companyId;
+      }
+    });
+    (zohoData.contacts || []).forEach((c) => {
+      const fullName = [c.firstName, c.lastName].filter(Boolean).join(" ") || undefined;
+      if (c.companyId) {
+        contactByCompanyId[c.companyId] = { name: fullName, mobile: c.mobile };
       }
     });
   }
@@ -506,7 +536,19 @@ export default function Home() {
                 const imei = imeis[idx];
                 const sim = simData?.statuses?.[imei];
                 const company = imei ? companyByImei[imei] : undefined;
-                return <TrackerCard key={tracker.id} tracker={tracker} sim={sim} company={company} />;
+                const contact =
+                  imei && companyIdByImei[imei]
+                    ? contactByCompanyId[companyIdByImei[imei]!]
+                    : undefined;
+                return (
+                  <TrackerCard
+                    key={tracker.id}
+                    tracker={tracker}
+                    sim={sim}
+                    company={company}
+                    contact={contact}
+                  />
+                );
               })}
             </div>
           )}
