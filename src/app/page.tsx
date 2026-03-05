@@ -73,12 +73,12 @@ function TrackerCard({
   tracker,
   sim,
   company,
-  contact,
+  contacts,
 }: {
   tracker: NormalizedTracker;
   sim?: SimStatus;
   company?: string;
-  contact?: { name?: string; phone?: string };
+  contacts?: { name?: string; phone?: string }[];
 }) {
   const statusText = tracker.status?.toLowerCase() || "desconocido";
   const statusColor = statusText.includes("on") || statusText.includes("activ")
@@ -343,9 +343,22 @@ function TrackerCard({
           </div>
           <div>
             <span className="text-white/60">Contacto: </span>
-            <span className="font-mono text-white">
-              {contact?.name || "—"} {contact?.phone ? `· ${contact.phone}` : ""}
-            </span>
+            {contacts && contacts.length > 0 ? (
+              <div className="mt-1 flex flex-col gap-1">
+                {contacts.map((c, idx) => (
+                  <div key={idx} className="flex items-center gap-2 text-white">
+                    <span className="font-mono">{c.name || "—"}</span>
+                    {c.phone && (
+                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-[12px] text-white/80">
+                        {c.phone}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <span className="font-mono text-white">—</span>
+            )}
           </div>
         </div>
       </div>
@@ -398,7 +411,7 @@ export default function Home() {
 
   const companyByImei: Record<string, string | undefined> = {};
   const companyIdByImei: Record<string, string | undefined> = {};
-  const contactByCompanyId: Record<string, { name?: string; phone?: string } | undefined> = {};
+  const contactsByCompanyId: Record<string, { name?: string; phone?: string }[] | undefined> = {};
   if (zohoData?.companies && zohoData.devices) {
     const companyMap: Record<string, string | undefined> = {};
     (zohoData.companies || []).forEach((c) => {
@@ -414,7 +427,9 @@ export default function Home() {
       const fullName = [c.firstName, c.lastName].filter(Boolean).join(" ") || undefined;
       const phone = c.mobile || c.phone;
       if (c.companyId) {
-        contactByCompanyId[c.companyId] = { name: fullName, phone };
+        const arr = contactsByCompanyId[c.companyId] || [];
+        arr.push({ name: fullName, phone });
+        contactsByCompanyId[c.companyId] = arr;
       }
     });
   }
@@ -537,9 +552,9 @@ export default function Home() {
                 const imei = imeis[idx];
                 const sim = simData?.statuses?.[imei];
                 const company = imei ? companyByImei[imei] : undefined;
-                const contact =
+                const contacts =
                   imei && companyIdByImei[imei]
-                    ? contactByCompanyId[companyIdByImei[imei]!]
+                    ? contactsByCompanyId[companyIdByImei[imei]!]
                     : undefined;
                 return (
                   <TrackerCard
@@ -547,7 +562,7 @@ export default function Home() {
                     tracker={tracker}
                     sim={sim}
                     company={company}
-                    contact={contact}
+                    contacts={contacts}
                   />
                 );
               })}
