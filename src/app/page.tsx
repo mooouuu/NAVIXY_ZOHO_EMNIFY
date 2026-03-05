@@ -101,7 +101,7 @@ function TrackerCard({
 
   const [resetting, setResetting] = useState(false);
   const [resetMsg, setResetMsg] = useState<string | null>(null);
-  const [smsBody, setSmsBody] = useState("");
+  const [smsBody, setSmsBody] = useState("setdigout 000");
   const [smsSending, setSmsSending] = useState(false);
   const [smsMsg, setSmsMsg] = useState<string | null>(null);
   const [smsList, setSmsList] = useState<SmsMessage[] | null>(null);
@@ -132,10 +132,11 @@ function TrackerCard({
     setSmsMsg(null);
     setSmsSending(true);
     try {
+      const payload = `  ${smsBody.trim()}`; // Teltonika requiere dos espacios iniciales
       const res = await fetch("/api/sim-sms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ endpointId, message: smsBody }),
+        body: JSON.stringify({ endpointId, message: payload }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "No se pudo enviar SMS");
@@ -283,13 +284,17 @@ function TrackerCard({
             <p className="text-white/50">SMS (Emnify)</p>
             <div className="flex flex-col gap-2">
               <div className="flex flex-col gap-2 sm:flex-row">
-                <input
+                <select
                   disabled={!endpointId || smsSending}
                   value={smsBody}
                   onChange={(e) => setSmsBody(e.target.value)}
-                  placeholder="Mensaje a enviar"
-                  className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-emerald-400 focus:outline-none"
-                />
+                  className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white focus:border-emerald-400 focus:outline-none"
+                >
+                  <option value="setdigout 000">setdigout 000 (apagar DOs)</option>
+                  <option value="setdigout 111">setdigout 111 (encender DOs)</option>
+                  <option value="web_connect">web_connect</option>
+                  <option value="getgps">getgps</option>
+                </select>
                 <button
                   disabled={!endpointId || smsSending || !smsBody.trim()}
                   onClick={handleSendSms}
@@ -305,6 +310,9 @@ function TrackerCard({
                   {smsLoading ? "Cargando…" : "Ver últimos SMS"}
                 </button>
               </div>
+              <span className="text-xs text-white/60">
+                Se envía con 2 espacios al inicio: "<code className="font-mono text-emerald-100">␠␠{smsBody}</code>"
+              </span>
               {smsMsg && <span className="text-xs text-white/70">{smsMsg}</span>}
               {!endpointId && <span className="text-xs text-white/50">Sin endpoint Emnify</span>}
               {smsList && smsList.length > 0 && (
