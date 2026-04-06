@@ -122,7 +122,7 @@ export async function resetConnectivity(endpointId: number) {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({}),
+    body: JSON.stringify({ location: null, pdp_context: null }),
   });
   if (!res.ok) {
     const text = await res.text();

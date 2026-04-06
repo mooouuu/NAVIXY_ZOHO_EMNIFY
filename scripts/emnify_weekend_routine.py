@@ -137,7 +137,11 @@ class EmnifyClient:
         return self._request("GET", f"/endpoint/{endpoint_id}/connectivity")
 
     def reset_connectivity(self, endpoint_id: int) -> None:
-        self._request("PATCH", f"/endpoint/{endpoint_id}/connectivity", payload={})
+        self._request(
+            "PATCH",
+            f"/endpoint/{endpoint_id}/connectivity",
+            payload={"location": None, "pdp_context": None},
+        )
 
     def send_sms(self, endpoint_id: int, message: str) -> None:
         self._request(
