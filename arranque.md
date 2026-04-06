@@ -37,3 +37,30 @@ Notas
 - Si vuelve a aparecer un error de Turbopack, repite paso 3 y arranca con `NEXT_DISABLE_TURBOPACK=1`.
 - El refresco de trackers es cada 60 s; alertas SOS cada 10 s.
 - El estado de SIM se consulta cada 60 s.
+
+## Rutina Emnify + Teltonika
+
+Script:
+```bash
+python3 scripts/emnify_weekend_routine.py --action off
+python3 scripts/emnify_weekend_routine.py --action on
+```
+
+Que hace:
+- `off`: espera a que la SIM este estable y manda el SMS de paro.
+- `on`: primero hace `connectivity_reset`, espera 3 min, valida `ONLINE + 4G` dos veces seguidas, manda un `getgps` como prueba y solo si responde manda el SMS de encendido.
+- Todos los SMS se mandan con dos espacios al inicio.
+- Guarda log en `logs/emnify-routines/`.
+
+Opciones utiles:
+```bash
+python3 scripts/emnify_weekend_routine.py --action on --dry-run
+python3 scripts/emnify_weekend_routine.py --action on --imei 860896051475861
+python3 scripts/emnify_weekend_routine.py --action off --skip-probe
+```
+
+Cron sugerido:
+```bash
+50 23 * * 5 cd /Users/chakal/Documents/CODEX/NAVIXY_ZOHO/navixy-webapp && /usr/bin/python3 scripts/emnify_weekend_routine.py --action off
+0 5 * * 1 cd /Users/chakal/Documents/CODEX/NAVIXY_ZOHO/navixy-webapp && /usr/bin/python3 scripts/emnify_weekend_routine.py --action on
+```
