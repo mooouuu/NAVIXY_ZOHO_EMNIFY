@@ -116,13 +116,13 @@ export async function fetchSimStatuses(imeis: string[]): Promise<Record<string, 
 export async function resetConnectivity(endpointId: number) {
   if (!endpointId) throw new Error("endpointId requerido");
   const token = await authenticate();
-  const res = await fetch(`${baseUrl}/connectivity_reset`, {
-    method: "POST",
+  const res = await fetch(`${baseUrl}/endpoint/${endpointId}/connectivity`, {
+    method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ endpoint: endpointId }),
+    body: JSON.stringify({}),
   });
   if (!res.ok) {
     const text = await res.text();
