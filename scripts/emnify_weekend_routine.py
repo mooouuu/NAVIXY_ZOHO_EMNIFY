@@ -79,9 +79,10 @@ def nested(data: Any, *keys: str) -> Any:
 
 
 class EmnifyClient:
-    def __init__(self, app_token: str, base_url: str) -> None:
+    def __init__(self, app_token: str, base_url: str, source_address: str) -> None:
         self.app_token = app_token
         self.base_url = base_url.rstrip("/")
+        self.source_address = source_address
         self.auth_token: str | None = None
 
     def authenticate(self) -> str:
@@ -147,7 +148,7 @@ class EmnifyClient:
         self._request(
             "POST",
             f"/endpoint/{endpoint_id}/sms",
-            payload={"payload": message},
+            payload={"payload": message, "source_address": self.source_address},
         )
 
     def list_sms(self, endpoint_id: int) -> list[dict[str, Any]]:
@@ -370,6 +371,11 @@ def parse_args() -> argparse.Namespace:
         default=os.getenv("TELTONIKA_ON_COMMAND", "setdigout ?0?"),
         help="Comando SMS para reactivar",
     )
+    parser.add_argument(
+        "--source-address",
+        default=os.getenv("EMNIFY_SMS_SOURCE_ADDRESS", "NAVEGO"),
+        help="Remitente del SMS MT en Emnify",
+    )
     return parser.parse_args()
 
 
@@ -392,7 +398,11 @@ def main() -> int:
     command = args.off_command if action == "off" else args.on_command
     do_reset_first = action == "on"
 
-    client = EmnifyClient(app_token=app_token, base_url=base_url)
+    client = EmnifyClient(
+        app_token=app_token,
+        base_url=base_url,
+        source_address=args.source_address,
+    )
     results: list[dict[str, Any]] = []
 
     for imei in imeis:

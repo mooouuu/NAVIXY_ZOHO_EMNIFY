@@ -2,6 +2,7 @@ import { jwtDecode } from "jwt-decode";
 
 const appToken = process.env.EMNIFY_APP_TOKEN;
 const baseUrl = process.env.EMNIFY_BASE_URL || "https://cdn.emnify.net/api/v1";
+const smsSourceAddress = process.env.EMNIFY_SMS_SOURCE_ADDRESS || "NAVEGO";
 
 let cachedAuth: { token: string; exp: number } | null = null;
 
@@ -143,7 +144,7 @@ export async function sendSms(endpointId: number, payload: string, sourceAddress
     },
     body: JSON.stringify({
       payload,
-      ...(sourceAddress ? { source_address: sourceAddress } : {}),
+      source_address: sourceAddress || smsSourceAddress,
     }),
   });
   if (!res.ok) {
