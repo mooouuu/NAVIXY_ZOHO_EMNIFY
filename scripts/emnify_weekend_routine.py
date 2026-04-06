@@ -79,10 +79,10 @@ def nested(data: Any, *keys: str) -> Any:
 
 
 class EmnifyClient:
-    def __init__(self, app_token: str, base_url: str, source_address: str) -> None:
+    def __init__(self, app_token: str, base_url: str, source_addresses: list[str]) -> None:
         self.app_token = app_token
         self.base_url = base_url.rstrip("/")
-        self.source_address = source_address
+        self.source_addresses = source_addresses
         self.auth_token: str | None = None
 
     def authenticate(self) -> str:
@@ -144,12 +144,34 @@ class EmnifyClient:
             payload={"location": None, "pdp_context": None},
         )
 
-    def send_sms(self, endpoint_id: int, message: str) -> None:
-        self._request(
-            "POST",
-            f"/endpoint/{endpoint_id}/sms",
-            payload={"payload": message, "source_address": self.source_address},
-        )
+    def send_sms(self, endpoint_id: int, message: str) -> dict[str, Any]:
+        last_error: Exception | None = None
+        for source_address in self.source_addresses:
+            payload: dict[str, Any] = {
+                "payload": message,
+                "source_address": source_address,
+            }
+            if any(ch.isalpha() for ch in source_address):
+                payload["source_address_type"] = {"id": 208}
+            try:
+                self._request(
+                    "POST",
+                    f"/endpoint/{endpoint_id}/sms",
+                    payload=payload,
+                )
+                return {"source_address": source_address}
+            except RuntimeError as exc:
+                last_error = exc
+                logging.warning(
+                    "Fallo enviando SMS con source_address=%s: %s",
+                    source_address,
+                    exc,
+                )
+                if "fallo con 422" not in str(exc):
+                    raise
+        if last_error:
+            raise last_error
+        raise RuntimeError("No se pudo enviar SMS")
 
     def list_sms(self, endpoint_id: int) -> list[dict[str, Any]]:
         result = self._request("GET", f"/endpoint/{endpoint_id}/sms")
@@ -229,7 +251,8 @@ def send_command_and_wait_reply(
     }
     payload = f"  {command.strip()}"
     logging.info('Enviando SMS "%s"', payload)
-    client.send_sms(endpoint_id, payload)
+    sms_send_result = client.send_sms(endpoint_id, payload)
+    logging.info("SMS aceptado por Emnify con source_address=%s", sms_send_result["source_address"])
 
     deadline = time.monotonic() + reply_timeout_seconds
     while time.monotonic() < deadline:
@@ -238,7 +261,12 @@ def send_command_and_wait_reply(
         if replies:
             reply = replies[0]
             logging.info('Respuesta recibida: "%s"', reply.get("payload"))
-            return {"ok": True, "reply": reply, "payload": payload}
+            return {
+                "ok": True,
+                "reply": reply,
+                "payload": payload,
+                "source_address": sms_send_result["source_address"],
+            }
         time.sleep(poll_interval)
 
     logging.warning("No se recibio respuesta al comando %s dentro del tiempo esperado", command)
@@ -372,9 +400,9 @@ def parse_args() -> argparse.Namespace:
         help="Comando SMS para reactivar",
     )
     parser.add_argument(
-        "--source-address",
-        default=os.getenv("EMNIFY_SMS_SOURCE_ADDRESS", "NAVEGO"),
-        help="Remitente del SMS MT en Emnify",
+        "--source-addresses",
+        default=os.getenv("EMNIFY_SMS_SOURCE_ADDRESSES", "Emnify,12345"),
+        help="Remitentes del SMS MT en Emnify, separados por coma",
     )
     return parser.parse_args()
 
@@ -398,10 +426,11 @@ def main() -> int:
     command = args.off_command if action == "off" else args.on_command
     do_reset_first = action == "on"
 
+    source_addresses = [item.strip() for item in args.source_addresses.split(",") if item.strip()]
     client = EmnifyClient(
         app_token=app_token,
         base_url=base_url,
-        source_address=args.source_address,
+        source_addresses=source_addresses,
     )
     results: list[dict[str, Any]] = []
 

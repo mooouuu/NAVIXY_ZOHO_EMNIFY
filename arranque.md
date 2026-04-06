@@ -9,7 +9,8 @@
    - `NAVIXY_HASH` y `NAVIXY_DOMAIN` (ej. saas.navego.mx)
    - `EMNIFY_APP_TOKEN` (application_token de Emnify)
    - Opcional: `EMNIFY_BASE_URL=https://cdn.emnify.net/api/v1`
-   - Opcional recomendado: `EMNIFY_SMS_SOURCE_ADDRESS=NAVEGO`
+   - Opcional recomendado: `EMNIFY_SMS_SOURCE_ADDRESS=Emnify`
+   - Para la rutina Python: `EMNIFY_SMS_SOURCE_ADDRESSES=Emnify,12345`
 
 3. Limpiar caché de Next (solo si hay fallas al arrancar)
    ```bash
