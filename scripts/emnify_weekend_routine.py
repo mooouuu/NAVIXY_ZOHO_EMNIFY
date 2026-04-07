@@ -231,7 +231,8 @@ def inbound_replies_since(
     replies: list[dict[str, Any]] = []
     for message in messages:
         message_id = message.get("id")
-        direction = str(message.get("direction") or "").lower()
+        sms_type = nested(message, "sms_type", "description")
+        direction = str(message.get("direction") or sms_type or "").lower()
         if isinstance(message_id, int) and message_id not in baseline_ids and direction == "mo":
             replies.append(message)
     return replies

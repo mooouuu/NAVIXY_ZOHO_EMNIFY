@@ -165,6 +165,10 @@ export type SmsMessage = {
   direction?: string;
   source_address?: string | number;
   dest_address?: string | number;
+  sms_type?: { description?: string; id?: number };
+  submit_date?: string;
+  delivery_date?: string;
+  msisdn?: string;
 };
 
 export async function listSms(endpointId: number, limit = 5): Promise<SmsMessage[]> {
@@ -178,5 +182,20 @@ export async function listSms(endpointId: number, limit = 5): Promise<SmsMessage
     throw new Error(`Emnify SMS list error ${res.status}: ${text}`);
   }
   const data = (await res.json()) as SmsMessage[];
-  return (data || []).slice(-limit).reverse();
+  return (data || [])
+    .slice(-limit)
+    .reverse()
+    .map((message) => ({
+      ...message,
+      direction:
+        message.direction ||
+        message.sms_type?.description?.toLowerCase(),
+      timestamp:
+        message.timestamp ||
+        message.delivery_date ||
+        message.submit_date,
+      dest_address:
+        message.dest_address ||
+        message.msisdn,
+    }));
 }
