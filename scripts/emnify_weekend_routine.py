@@ -17,6 +17,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import sys
 import time
 from datetime import datetime, timezone
@@ -238,6 +239,54 @@ def inbound_replies_since(
     return replies
 
 
+def parse_teltonika_output_reply(command: str, reply_payload: str | None) -> dict[str, Any] | None:
+    if not reply_payload or "setdigout" not in command.lower():
+        return None
+
+    text = reply_payload.strip()
+    target_state: str | None = None
+    command_match = re.search(r"\?([01])\?", command)
+    if command_match:
+        target_state = command_match.group(1)
+
+    already_match = re.search(r"DOUT2:Already set to ([01])", text, flags=re.IGNORECASE)
+    if already_match:
+        current_state = already_match.group(1)
+        return {
+            "target_output": "DOUT2",
+            "target_state": target_state,
+            "reported_state": current_state,
+            "already_in_target_state": target_state == current_state if target_state is not None else True,
+            "state_changed": False,
+            "timeout": None,
+            "raw_reply": text,
+        }
+
+    state_match = re.search(r"DOUT2:([01])", text, flags=re.IGNORECASE)
+    timeout_match = re.search(r"Timeout:([A-Z0-9_]+)", text, flags=re.IGNORECASE)
+    if state_match:
+        current_state = state_match.group(1)
+        return {
+            "target_output": "DOUT2",
+            "target_state": target_state,
+            "reported_state": current_state,
+            "already_in_target_state": False,
+            "state_changed": target_state == current_state if target_state is not None else True,
+            "timeout": timeout_match.group(1) if timeout_match else None,
+            "raw_reply": text,
+        }
+
+    return {
+        "target_output": "DOUT2",
+        "target_state": target_state,
+        "reported_state": None,
+        "already_in_target_state": None,
+        "state_changed": None,
+        "timeout": None,
+        "raw_reply": text,
+    }
+
+
 def send_command_and_wait_reply(
     client: EmnifyClient,
     endpoint_id: int,
@@ -262,11 +311,23 @@ def send_command_and_wait_reply(
         if replies:
             reply = replies[0]
             logging.info('Respuesta recibida: "%s"', reply.get("payload"))
+            interpreted = parse_teltonika_output_reply(command, reply.get("payload"))
+            if interpreted:
+                logging.info(
+                    "Interpretacion Teltonika: output=%s target=%s reported=%s changed=%s already=%s timeout=%s",
+                    interpreted.get("target_output"),
+                    interpreted.get("target_state"),
+                    interpreted.get("reported_state"),
+                    interpreted.get("state_changed"),
+                    interpreted.get("already_in_target_state"),
+                    interpreted.get("timeout"),
+                )
             return {
                 "ok": True,
                 "reply": reply,
                 "payload": payload,
                 "source_address": sms_send_result["source_address"],
+                "interpreted_reply": interpreted,
             }
         time.sleep(poll_interval)
 
